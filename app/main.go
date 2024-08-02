@@ -8,6 +8,7 @@ import (
 
 func main() {
 	// Define the port to listen on
+	// Default to 8080
 	port := "8080"
 
 	// Check if a port is specified in the environment variables
