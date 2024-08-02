@@ -2,7 +2,6 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: production
-
 ---
 apiVersion: v1
 kind: Service
@@ -16,10 +15,8 @@ spec:
     app: bene-cluster
   ports:
     - port: 80
-      name: http
-      targetPort: 80
-  type: NodePort
-
+      targetPort: 8080
+  type: ClusterIP
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -27,42 +24,66 @@ metadata:
   name: bene-cluster
   namespace: production
 spec:
+  replicas: 3
   selector:
     matchLabels:
       app: bene-cluster
   strategy:
     type: RollingUpdate
-  template: #Template for container
+  template:
     metadata:
       labels:
         app: bene-cluster
     spec:
       containers:
-        - name: any
-          image: asia.gcr.io/$PROJECT_ID/production/wooless:$SHORT_SHA
-          imagePullPolicy: Always
+        - name: bene-app
+          image: asia.gcr.io/${PROJECT_ID}/production/benek8s:${SHORT_SHA}
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 80
-              name: bene-cluster
+            - containerPort: 8080
           resources:
             requests:
               cpu: 50m
-
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            readOnlyRootFilesystem: true
 ---
-apiVersion: autoscaling/v1
+apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: bene-cluster
   namespace: production
 spec:
-  maxReplicas: 25
-  minReplicas: 3
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
     name: bene-cluster
-  targetCPUUtilizationPercentage: 100
-
+  minReplicas: 3
+  maxReplicas: 25
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 80
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -78,14 +99,13 @@ spec:
     - host: cloud.beneboba.me
       http:
         paths:
-          - path: /*
-            pathType: ImplementationSpecific
+          - path: /
+            pathType: Prefix
             backend:
               service:
                 name: bene-cluster
                 port:
                   number: 80
-
 ---
 apiVersion: networking.gke.io/v1
 kind: ManagedCertificate
