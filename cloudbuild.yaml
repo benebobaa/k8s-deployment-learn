@@ -6,7 +6,7 @@ steps:
         "build",
         "-t",
         "asia.gcr.io/$PROJECT_ID/production/benek8s:$SHORT_SHA",
-        "./app",
+        "./app/.",
       ]
     timeout: 900s
 
