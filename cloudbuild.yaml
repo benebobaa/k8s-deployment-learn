@@ -33,6 +33,5 @@ steps:
 
 options:
   logging: CLOUD_LOGGING_ONLY
-
 # Global Timeout
-timeout: "3600s"
+# timeout: "3600s"
