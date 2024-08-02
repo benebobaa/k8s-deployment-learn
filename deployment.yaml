@@ -24,7 +24,6 @@ metadata:
   name: bene-cluster
   namespace: production
 spec:
-  replicas: 3
   selector:
     matchLabels:
       app: bene-cluster
@@ -38,16 +37,12 @@ spec:
       containers:
         - name: bene-app
           image: asia.gcr.io/${PROJECT_ID}/production/benek8s:${SHORT_SHA}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           ports:
             - containerPort: 8080
           resources:
             requests:
               cpu: 50m
-              memory: 64Mi
-            limits:
-              cpu: 100m
-              memory: 128Mi
           readinessProbe:
             httpGet:
               path: /healthz
@@ -65,25 +60,19 @@ spec:
             runAsUser: 65534
             readOnlyRootFilesystem: true
 ---
-apiVersion: autoscaling/v2
+apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
   name: bene-cluster
   namespace: production
 spec:
+  maxReplicas: 25
+  minReplicas: 3
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
     name: bene-cluster
-  minReplicas: 3
-  maxReplicas: 25
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 80
+  targetCPUUtilizationPercentage: 100
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -99,8 +88,8 @@ spec:
     - host: cloud.beneboba.me
       http:
         paths:
-          - path: /
-            pathType: Prefix
+          - path: /*
+            pathType: ImplementationSpecific
             backend:
               service:
                 name: bene-cluster
