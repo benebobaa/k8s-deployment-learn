@@ -31,5 +31,8 @@ steps:
       - --location=asia-southeast1-b
     timeout: 900s
 
+options:
+  logging: CLOUD_LOGGING_ONLY
+
 # Global Timeout
 timeout: "3600s"
