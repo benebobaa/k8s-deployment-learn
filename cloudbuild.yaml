@@ -23,15 +23,30 @@ steps:
     args: ["deployment.yaml"]
 
   - id: Deploy-to-GKE
-    name: "gcr.io/cloud-builders/gke-deploy"
+    name: "gcr.io/cloud-builders/kubectl"
     args:
-      - run
-      - --filename=deployment.yaml
-      - --cluster=bene-cluster
-      - --location=asia-southeast1-b
-    timeout: 900s
+      - "apply"
+      - "-f"
+      - "deployment.yaml"
+    env:
+      - "CLOUDSDK_COMPUTE_ZONE=asia-southeast1-b"
+      - "CLOUDSDK_CONTAINER_CLUSTER=bene-cluster"
+    timeout: 600s
+
+  - id: Verify-deployment
+    name: "gcr.io/cloud-builders/kubectl"
+    args:
+      - "rollout"
+      - "status"
+      - "deployment/bene-cluster"
+      - "-n"
+      - "production"
+      - "--timeout=600s"
+    env:
+      - "CLOUDSDK_COMPUTE_ZONE=asia-southeast1-b"
+      - "CLOUDSDK_CONTAINER_CLUSTER=bene-cluster"
 
 options:
   logging: CLOUD_LOGGING_ONLY
-# Global Timeout
-# timeout: "3600s"
+
+timeout: "3600s"
