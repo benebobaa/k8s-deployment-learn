@@ -70,23 +70,19 @@ spec:
             runAsUser: 65534
             readOnlyRootFilesystem: true
 ---
-apiVersion: autoscaling/v2beta1 # Updated to v2beta1 for more flexibility
+apiVersion: autoscaling/v1
 kind: HorizontalPodAutoscaler
 metadata:
   name: bene-cluster
   namespace: production
 spec:
-  maxReplicas: 10 # Reduced to match your cluster's max capacity
+  maxReplicas: 10
   minReplicas: 3
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        targetAverageUtilization: 80 # Lowered to trigger scaling earlier
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
     name: bene-cluster
+  targetCPUUtilizationPercentage: 80
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
